@@ -63,7 +63,7 @@ void Network::BackPropagation()
 {
 	//get gradient in the output layer.
 	//g=(dC/da)*f'(x); where f'(x) is the derived activation function (sigmoid).
-	//[g1 g2 g3]=[y1'*e1	y2'*e2		y3'*e3];
+	//[gO1 gO2 gO3]=[y1'*e1	y2'*e2		y3'*e3];
 	Matrix OutputGradient = Matrix(1, error.size(), false);
 	std::vector <Matrix> w = weightconnections;
 	for (int i = 0; i < error.size(); i++)
@@ -80,9 +80,9 @@ void Network::BackPropagation()
 	weightconnections.at(layers.size() - 2) -= dw;
 	std::cout << "Weight COnn at out" << std::endl;
 	weightconnections.at(layers.size() - 2).Print();
-	//[w7	w8	w9		-[w7'	w8'	T
-	//w10	w11	w12]	  w9'	w10'		=
-	//					  w11'	w12']
+	//[w7	w9		w11		-[w7'	w8'	T
+	//w8	w10		w12]	  w9'	w10'		=
+	//						  w11'	w12']
 	OutputGradient.Print();
 	//computing for the gradient in the hidden layer
 	std::vector<Matrix> HiddenGradient;
@@ -91,10 +91,17 @@ void Network::BackPropagation()
 		//get the gradient of the 1st hidden layer
 		Matrix currWeightConnections = w.at(i);
 		Matrix derivedLayer = layers.at(i).DerivedActivatedVals();
-		Matrix gradient = i == layers.size() - 2 ? OutputGradient.transpose() : HiddenGradient.back().transpose();
-		Matrix activatedLayer = (i - 1) == 0 ? layers.at(0).Value() : layers.at(i - 1).ActivatedVals();
+		Matrix gradient = i == layers.size() - 2 ? OutputGradient.transpose() : HiddenGradient.back().transpose();	//if it is the 1st hidden layer 
+																													// use gradient of the ouput otherwise
+																													//use the current HiddenGradient
+		
+		Matrix activatedLayer = (i - 1) == 0 ? layers.at(0).Value() : layers.at(i - 1).ActivatedVals();				//if it is at the input layer use the 
+																													//input values otherwise use the activated
 		//computing for the gradient
-		Matrix m = (currWeightConnections * gradient).transpose();
+		//[w7	w9		w11		*	[g1			
+		// w8	w10		w12]		 g2		=	[gh1 gh2]
+		//							 g3]
+		Matrix m = (currWeightConnections * gradient).transpose();		//transposing it
 		HiddenGradient.emplace_back(Matrix::Hadamard(m, derivedLayer));
 		Matrix dw = (HiddenGradient.back().transpose() * activatedLayer).transpose();
 		weightconnections.at(i - 1) -= dw;
