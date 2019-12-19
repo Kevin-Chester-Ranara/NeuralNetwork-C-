@@ -1,9 +1,11 @@
 #include "Network.h"
+#include <algorithm>
+#include <windows.data.json.h>
 int main()
 {
 	std::vector<int> topology = { 3,2,3 };
 	std::vector<int> topo1 = { 7,5,4,4,7 };
-	std::vector<double> Input = { 1,1,1 };
+	std::vector<double> Input = { 1,0,1 };
 	std::vector<double> Input1 = { 1,0,0,1,1,1,1 };
 	Network ann = Network(topology);
 	ann.Initialize(Input);
@@ -12,8 +14,18 @@ int main()
 	ann.SetErrors();
 	//ann.Print();
 	ann.BackPropagation();
-	ann.FeedForward();
-	ann.SetErrors();
-	ann.Print();
+	//ann.FeedForward();
+	//ann.SetErrors();
+	while (std::abs(ann.GetTotalError()) > 0.1)
+	{
+		ann.FeedForward();
+		ann.SetErrors();
+		ann.Print();
+		ann.BackPropagation();
+		//ann.FeedForward();
+		//ann.SetErrors();
+		//ann.Print();
+	}
+	
 	return 0;
 }

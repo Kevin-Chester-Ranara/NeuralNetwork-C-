@@ -1,5 +1,6 @@
 #include "Network.h"
-
+#include <math.h>
+#include <algorithm>
 Network::Network(std::vector<int> topology)
 	:
 	topology(topology)
@@ -37,6 +38,7 @@ void Network::FeedForward()
 			layers.at(x).Initialize(z.Vectorize());
 		}
 	}
+	errors = 0;
 }
 
 void Network::SetTarget(std::vector<double> Target)
@@ -53,9 +55,13 @@ void Network::SetErrors()
 		//using quadratic cost function; C=1/2*(y-a)^2;
 		//where y is target output and a is activated value.
 		//dC/da=(a-y)
-		double e = layers.at(layers.size() - 1).GetNeurons().at(i).GetActivatedVals() - target.at(i);
+		//double e = layers.at(layers.size() - 1).GetNeurons().at(i).GetActivatedVals() - target.at(i);
+		//using entropy cost 
+		double a = layers.at(layers.size() - 1).GetNeurons().at(i).GetActivatedVals();
+		double y = target.at(i);
+		double e = (a - y);
 		error.emplace_back(e);
-		errors += e;
+		errors += abs(e);
 	}
 }
 
@@ -68,16 +74,17 @@ void Network::BackPropagation()
 	std::vector <Matrix> w = weightconnections;
 	for (int i = 0; i < error.size(); i++)
 	{
-		OutputGradient.SetValue(0, i, layers.at(layers.size() - 1).GetNeurons().at(i).GetDerivedActivatedVals() * error.at(i));
+		OutputGradient.SetValue(0, i, error.at(i));
+		//OutputGradient.SetValue(0, i, layers.at(layers.size() - 1).GetNeurons().at(i).GetDerivedActivatedVals() * error.at(i));
 	}
 	Matrix deltaweights;
 	Matrix FirstHiddenLayer = layers.at(layers.size() - 2).ActivatedVals();
-	deltaweights = OutputGradient.transpose() * FirstHiddenLayer;
+	deltaweights = (OutputGradient.transpose() * FirstHiddenLayer).transpose();
+	Matrix stepsize = deltaweights * learningrate;
 	//[gO1				[w7	w8
 	//gO2	*	[z1 z2]=w9	w10
 	//gO3]				w11	w12]	then transpose so that we can subtract it from the original weightconnection
-	Matrix dw = deltaweights.transpose();
-	weightconnections.at(layers.size() - 2) -= dw;
+	weightconnections.at(layers.size() - 2) -= stepsize;
 	std::cout << "Weight COnn at out" << std::endl;
 	weightconnections.at(layers.size() - 2).Print();
 	//[w7	w9		w11		-[w7'	w8'	T
@@ -101,11 +108,16 @@ void Network::BackPropagation()
 		//[w7	w9		w11		*	[g1			
 		// w8	w10		w12]		 g2		=	[gh1 gh2]
 		//							 g3]
-		Matrix m = (currWeightConnections * gradient).transpose();		//transposing it
+		/**Matrix m = (currWeightConnections * gradient).transpose();		//transposing it
 		HiddenGradient.emplace_back(Matrix::Hadamard(m, derivedLayer));
-		Matrix dw = (HiddenGradient.back().transpose() * activatedLayer).transpose();
-		weightconnections.at(i - 1) -= dw;
+		deltaweights = (HiddenGradient.back().transpose() * activatedLayer).transpose();**/	// deltaweights is just dC/dw...Refer to Gradient Descent Kuno program 
+		Matrix m = (currWeightConnections * gradient).transpose();
+		HiddenGradient.emplace_back(m);
+		deltaweights = (HiddenGradient.back().transpose() * activatedLayer).transpose();
+		Matrix stepsize = deltaweights * learningrate;										//stepsize=dC/dw* learningrate;
+		weightconnections.at(i - 1) -= stepsize;													//newweightconnection=oldweightconnection-stepsize
 	}
+	error.clear();
 }
 
 void Network::Print()
@@ -119,9 +131,16 @@ void Network::Print()
 		weightconnections.at(i).Print();
 		layers.at(i + 1).ActivatedVals().Print();
 	}
-	std::cout << "The errors are:" << std::endl;
 	for (int i = 0; i < error.size(); i++)
 	{
-		std::cout << error.at(i) << "\t \t";
+		std::cout << "error: "<<error.at(i) << "\t \t";
 	}
+	std::cout << std::endl;
+	std::cout << "The total error :" << errors << std::endl;
+	
+}
+
+double Network::GetTotalError()
+{
+	return errors;
 }

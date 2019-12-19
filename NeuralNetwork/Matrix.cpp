@@ -51,6 +51,19 @@ Matrix Matrix::operator*(Matrix& rhs) const
 	return c;
 }
 
+Matrix Matrix::operator*(double& rhs) const
+{
+	Matrix c = Matrix(row, column, false);
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < column; j++)
+		{
+			c.SetValue(i, j, values.at(i).at(j) * rhs);
+		}
+	}
+	return c;
+}
+
 Matrix Matrix::Hadamard(Matrix& m1, Matrix& m2)
 {
 	assert(m1.row == m2.row && m1.column == m2.column);

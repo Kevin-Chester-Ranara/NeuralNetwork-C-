@@ -11,6 +11,7 @@ public:
 	Matrix(int row, int column, bool randomize);
 	double randomize();
 	Matrix operator*(Matrix& rhs)const;
+	Matrix operator*(double& rhs)const;
 	static Matrix Hadamard(Matrix& m1, Matrix& m2);
 	Matrix operator-(double value)const;
 	Matrix operator-(Matrix& rhs)const;
