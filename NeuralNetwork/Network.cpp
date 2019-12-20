@@ -52,16 +52,18 @@ void Network::SetErrors()
 	int outputneurons = layers.at(layers.size() - 1).GetNeurons().size();
 	for (int i = 0; i < outputneurons; i++)
 	{
-		//using quadratic cost function; C=1/2*(y-a)^2;
-		//where y is target output and a is activated value.
-		//dC/da=(a-y)
-		//double e = layers.at(layers.size() - 1).GetNeurons().at(i).GetActivatedVals() - target.at(i);
-		//using entropy cost 
+		/**using cross entropy cost function much better than quadratic
+		C=y*ln(a)+(1-y)*ln(1-a)
+		where y is target output and a is activated value.
+		dC/dw=(dC/da)(da/dz)(dz/dw)
+		dC/da=a-y/a*(1-a)	;	da/dz= o'(z)=o(z)(1-o(z)) where o(z)=a		dz/dw=a^(l-1)-activated neuron of the previous layer
+		dC/dw=(a-y)*a^(l-1)
+		**/ 
 		double a = layers.at(layers.size() - 1).GetNeurons().at(i).GetActivatedVals();
 		double y = target.at(i);
 		double e = (a - y);
 		error.emplace_back(e);
-		errors += abs(e);
+		errors += -(y * log(a) + (1 - y) * log(1 - a));
 	}
 }
 

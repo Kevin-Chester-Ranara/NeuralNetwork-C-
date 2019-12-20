@@ -12,11 +12,8 @@ int main()
 	ann.SetTarget(Input);
 	ann.FeedForward();
 	ann.SetErrors();
-	//ann.Print();
 	ann.BackPropagation();
-	//ann.FeedForward();
-	//ann.SetErrors();
-	while (std::abs(ann.GetTotalError()) > 0.1)
+	while (ann.GetTotalError() > 0.1)
 	{
 		ann.FeedForward();
 		ann.SetErrors();
