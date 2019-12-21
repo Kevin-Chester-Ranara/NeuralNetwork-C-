@@ -16,6 +16,7 @@ public:
 private:
 	std::vector<int>	topology;
 	std::vector<Layer>	layers;
+	std::vector<Layer>	biases;
 	std::vector<Matrix> weightconnections;
 	std::vector<double> error;
 	std::vector<double> target;

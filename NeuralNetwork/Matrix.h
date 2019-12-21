@@ -15,6 +15,7 @@ public:
 	static Matrix Hadamard(Matrix& m1, Matrix& m2);
 	Matrix operator-(double value)const;
 	Matrix operator-(Matrix& rhs)const;
+	Matrix operator+(Matrix& rhs)const;
 	Matrix& operator-=(double value);
 	Matrix& operator-=(Matrix& rhs);
 	Matrix transpose();

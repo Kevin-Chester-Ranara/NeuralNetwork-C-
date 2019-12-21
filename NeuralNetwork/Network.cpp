@@ -9,6 +9,10 @@ Network::Network(std::vector<int> topology)
 	{
 		layers.emplace_back(topology.at(i));
 	}
+	for (int i = 1; i < topology.size(); i++)
+	{
+		biases.emplace_back(topology.at(i));
+	}
 	for (int i = 0; i < topology.size() - 1; i++)
 	{
 		weightconnections.emplace_back(topology.at(i), topology.at(i + 1), true);
@@ -18,6 +22,13 @@ Network::Network(std::vector<int> topology)
 void Network::Initialize(std::vector<double> values)
 {
 	layers.at(0).Initialize(values);
+	for (int i = 0; i < biases.size(); i++)
+	{
+		for (int j = 0; j < biases.at(i).GetNeurons().size(); j++)
+		{
+			biases.at(i).GetNeurons().at(j).Randomize();
+		}
+	}
 }
 
 void Network::FeedForward()
@@ -28,13 +39,15 @@ void Network::FeedForward()
 		{
 			//from input layer to 1st hidden layer
 			int x = i + 1;
-			Matrix z = layers.at(i).Value() * weightconnections.at(i);
+			Matrix bias = biases.at(i).Value();
+			Matrix z = (layers.at(i).Value() * weightconnections.at(i)) + bias;
 			layers.at(x).Initialize(z.Vectorize());
 		}
 		else
 		{
 			int x = i + 1;
-			Matrix z = layers.at(i).ActivatedVals() * weightconnections.at(i);
+			Matrix bias = biases.at(i).Value();
+			Matrix z = (layers.at(i).ActivatedVals() * weightconnections.at(i)) + bias;
 			layers.at(x).Initialize(z.Vectorize());
 		}
 	}
@@ -82,16 +95,14 @@ void Network::BackPropagation()
 	Matrix deltaweights;
 	Matrix FirstHiddenLayer = layers.at(layers.size() - 2).ActivatedVals();
 	deltaweights = (OutputGradient.transpose() * FirstHiddenLayer).transpose();
-	Matrix stepsize = deltaweights * learningrate;
-	//[gO1				[w7	w8
-	//gO2	*	[z1 z2]=w9	w10
-	//gO3]				w11	w12]	then transpose so that we can subtract it from the original weightconnection
-	weightconnections.at(layers.size() - 2) -= stepsize;
-	std::cout << "Weight COnn at out" << std::endl;
-	weightconnections.at(layers.size() - 2).Print();
-	//[w7	w9		w11		-[w7'	w8'	T
-	//w8	w10		w12]	  w9'	w10'		=
-	//						  w11'	w12']
+	Matrix stepsizeweight = deltaweights * learningrate;
+	//[gO1]				[w7		w8 ]
+	//|gO2|	*	[z1 z2]=|w9		w10|
+	//[gO3]				[w11	w12]	then transpose so that we can subtract it from the original weightconnection
+	weightconnections.at(layers.size() - 2) -= stepsizeweight;
+	//[w7	w9		w11|		-[w7'	w8'	|T
+	//|w8	w10		w12]		 |w9'	w10'|		=
+	//							 |w11'	w12']
 	OutputGradient.Print();
 	//computing for the gradient in the hidden layer
 	std::vector<Matrix> HiddenGradient;
@@ -107,17 +118,35 @@ void Network::BackPropagation()
 		Matrix activatedLayer = (i - 1) == 0 ? layers.at(0).Value() : layers.at(i - 1).ActivatedVals();				//if it is at the input layer use the 
 																													//input values otherwise use the activated
 		//computing for the gradient
-		//[w7	w9		w11		*	[g1			
-		// w8	w10		w12]		 g2		=	[gh1 gh2]
-		//							 g3]
-		/**Matrix m = (currWeightConnections * gradient).transpose();		//transposing it
+		//[w7	w9		w11|		*	[g1|			
+		//| w8	w10		w12]			|g2|		=	[gh1 gh2]
+		//								|g3]
+		/**Matrix m = (currWeightConnections * gradient).transpose();
 		HiddenGradient.emplace_back(Matrix::Hadamard(m, derivedLayer));
-		deltaweights = (HiddenGradient.back().transpose() * activatedLayer).transpose();**/	// deltaweights is just dC/dw...Refer to Gradient Descent Kuno program 
+		deltaweights = (HiddenGradient.back().transpose() * activatedLayer).transpose();**/ 
 		Matrix m = (currWeightConnections * gradient).transpose();
 		HiddenGradient.emplace_back(m);
-		deltaweights = (HiddenGradient.back().transpose() * activatedLayer).transpose();
-		Matrix stepsize = deltaweights * learningrate;										//stepsize=dC/dw* learningrate;
-		weightconnections.at(i - 1) -= stepsize;													//newweightconnection=oldweightconnection-stepsize
+		deltaweights = (HiddenGradient.back().transpose() * activatedLayer).transpose();//deltaweights is just dC / dw...Refer to Gradient Descent Kuno program
+		stepsizeweight = deltaweights * learningrate;									//stepsize=dC/dw* learningrate;
+		weightconnections.at(i - 1) -= stepsizeweight;									//newweightconnection=oldweightconnection-stepsize
+	}
+	int j = 0;
+	for (int i = layers.size() - 2; i >= 0; i--)
+	{
+		Matrix gradient;
+		if (i == layers.size() - 2)
+		{
+			gradient = OutputGradient;
+			Matrix stepsizebias = gradient * learningrate;
+			biases.at(i).Initialize((biases.at(i).Value() - stepsizebias).Vectorize());
+		}
+		else
+		{
+			gradient = HiddenGradient.at(j);
+			Matrix stepsizebias = gradient * learningrate;
+			biases.at(i).Initialize((biases.at(i).Value() - stepsizebias).Vectorize());
+			j++;
+		}
 	}
 	error.clear();
 }
@@ -131,6 +160,8 @@ void Network::Print()
 			layers.at(i).Value().Print();
 		}
 		weightconnections.at(i).Print();
+		std::cout << "Biases: " << std::endl;
+		biases.at(i).Value().Print();
 		layers.at(i + 1).ActivatedVals().Print();
 	}
 	for (int i = 0; i < error.size(); i++)

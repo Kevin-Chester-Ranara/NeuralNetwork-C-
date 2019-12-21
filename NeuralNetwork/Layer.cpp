@@ -13,6 +13,7 @@ Layer::Layer(int num)
 
 void Layer::Initialize(std::vector<double> values)
 {
+	assert(neurons.size() == values.size());
 	for (int i = 0; i < neurons.size(); i++)
 	{
 		neurons.at(i).Initialize(values.at(i));
@@ -53,3 +54,4 @@ std::vector<Neuron> Layer::GetNeurons()
 {
 	return neurons;
 }
+

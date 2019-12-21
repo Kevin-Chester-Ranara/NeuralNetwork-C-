@@ -26,7 +26,7 @@ double Matrix::randomize()
 {
 	std::random_device rd;
 	std::mt19937_64 rng(rd());
-	std::uniform_real_distribution<> Dist(0, 1);
+	std::uniform_real_distribution<double> Dist(0, 1);
 
 	return Dist(rng);
 }
@@ -105,6 +105,20 @@ Matrix Matrix::operator-(Matrix& rhs) const
 		{
 			double d = values.at(i).at(j) - rhs.values.at(i).at(j);
 			c.SetValue(i, j, d);
+		}
+	}
+	return c;
+}
+
+Matrix Matrix::operator+(Matrix& rhs) const
+{
+	assert(row == rhs.row && column == rhs.column);
+	Matrix c = Matrix(row, column, false);
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < column; j++)
+		{
+			c.SetValue(i, j, values.at(i).at(j) + rhs.values.at(i).at(j));
 		}
 	}
 	return c;

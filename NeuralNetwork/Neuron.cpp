@@ -43,3 +43,11 @@ double Neuron::GetDerivedActivatedVals()
 {
 	return derived_activatedval;
 }
+
+void Neuron::Randomize()
+{
+	std::random_device rd;
+	std::mt19937 random(rd());
+	std::uniform_real_distribution<double> Dist(0, 1);
+	val = Dist(random);
+}

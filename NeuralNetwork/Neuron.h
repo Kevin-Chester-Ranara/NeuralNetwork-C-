@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <algorithm>
+#include <random>
 class Neuron
 {
 public:
@@ -11,6 +12,7 @@ public:
 	double GetValue();
 	double GetActivatedVals();
 	double GetDerivedActivatedVals();
+	void Randomize();
 private:
 	double val = 0.00;
 	double activatedval;
